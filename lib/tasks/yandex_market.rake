@@ -70,7 +70,7 @@ namespace :spree_yandex_market do
 
     puts 'Creating symlink...'
     
-    # Делаем симлинк на ссылку файла yandex_market_last.gz
+    # Делаем симлинк на ссылку файла yandex_market_last.xml
     `ln -sf "#{tfile.path}" "#{File.join(directory, "#{ts}.xml")}"`
 
     # Удаляем лишнии файлы
@@ -81,8 +81,8 @@ namespace :spree_yandex_market do
                     .map { |x| [File.basename(x), File.mtime(x)] }\
                     .sort { |x, y| y.last <=> x.last }
     
-    e = @export_files.find { |x| x.first == "#{ts}.gz" }
-    @export_files.reject! { |x| x.first == "#{ts}.gz" }
+    e = @export_files.find { |x| x.first == "#{ts}.xml" }
+    @export_files.reject! { |x| x.first == "#{ts}.xml" }
     @export_files.unshift(e)
 
     @export_files[@number_of_files..-1] && @export_files[@number_of_files..-1].each do |x|

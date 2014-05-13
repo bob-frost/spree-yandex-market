@@ -5,8 +5,6 @@ module Export
   class YandexMarketExporter
     include Spree::Core::Engine.routes.url_helpers
     attr_accessor :host, :currencies
-    
-    DEFAULT_OFFER = "simple"
 
     def helper
       @helper ||= ApplicationController.helpers
@@ -43,21 +41,24 @@ module Export
             }        
             
             xml.categories { # категории товара
-              Spree::Taxonomy.all.each do |taxonomy|
-                taxonomy.root.self_and_descendants.each do |cat|
-                  @cat_opt = { :id => cat.id }
-                  @cat_opt.merge!({ :parentId => cat.parent_id}) unless cat.parent_id.blank?
-                  xml.category(@cat_opt){ xml  << cat.name }
-                end
+              Spree::Taxon.categories_root.self_and_descendants.each do |cat|
+                @cat_opt = { :id => cat.id }
+                @cat_opt.merge!({ :parentId => cat.parent_id}) unless cat.parent_id.blank?
+                xml.category(@cat_opt){ xml  << cat.name }
               end
             }
+
+            # Cтоимость доставки для региона, в котором расположен магазин
+            if @config.preferred_local_delivery_cost.present?
+              xml.local_delivery_cost @config.preferred_local_delivery_cost
+            end
             
             xml.offers { # список товаров
-              products = Spree::Product.active.master_price_gte(0.001)
-              # products = products.on_hand if @config.preferred_wares == "on_hand"
-              products = products.where(:export_to_yandex_market => true).group("#{Spree::Product.table_name}.id")
-              products.each do |product|
-                offer(xml, product, product.taxons.first) unless product.taxons.empty?
+              products = Spree::Product.visible.where(:export_to_yandex_market => true).group("#{Spree::Product.table_name}.id")
+              products.find_each do |product|
+                unless product.brand.blank? || product.category.blank? || (@config.preferred_wares == 'can_stock' && !product.master.can_stock?)
+                  offer(xml, product)
+                end
               end
             }
           }
@@ -73,35 +74,31 @@ module Export
       "http://#{@host.sub(%r[^http://],'')}/#{path.sub(%r[^/],'')}"
     end
     
-    def offer(xml,product, cat)
-      offer_simple(xml, product, cat)
-    end
-    
-    def shared_xml(xml, product, cat)
-      xml.url product_url(product, :host => @host)
-      xml.price product.price
-      xml.currencyId @currencies.first.first
-      xml.categoryId cat.id
-      xml.picture path_to_url(CGI.escape(product.images.first.attachment.url(:product, false))) unless product.images.empty?
-    end
-    
-    def individual_xml(xml, product, cat, product_properties = {})
-      xml.delivery            true
-      xml.local_delivery_cost @config.preferred_local_delivery_cost unless @config.preferred_local_delivery_cost.blank?
-      xml.name                product.name
-      xml.vendorCode          product_properties[@config.preferred_vendor_code] if product_properties[@config.preferred_country_of_manufacturer].present?
-      xml.description         product.description if product.description.present?
-      xml.country_of_origin   product_properties[@config.preferred_country_of_manufacturer] if product_properties[@config.preferred_country_of_manufacturer].present?
-      xml.downloadable        false
-    end
-
-    def offer_simple(xml, product, cat)
-      product_properties = { }
-      product.product_properties.map {|x| product_properties[x.property_name] = x.value }
-      opt = { :id => product.id,  :available => product.available? }
+    def offer(xml,product)
+      opt = { :type => 'vendor.model', :id => product.id, :available => (product.master.total_on_hand > 0) }
       xml.offer(opt) {
-        shared_xml(xml, product, cat)
-        individual_xml(xml, product, cat, product_properties)
+        xml.url                     product_url(product, :host => @host)
+        xml.price                   product.price
+        xml.currencyId              @currencies.first.first
+        xml.categoryId              product.category_id
+        if image = product.images.first
+          xml.picture               path_to_url(CGI.escape(image.attachment.url(:product, false)))
+        end
+        xml.delivery                true
+        xml.vendor                  product.brand_name
+        xml.model                   product.name
+        if product.description.present?
+          xml.description           product.description
+        end
+        if product.warranty.present? && product.warranty > 0
+          xml.manufacturer_warranty product.warranty
+        end
+
+        product_properties = product.product_properties.includes(:property)
+        product_properties = product.category.filter_displayed_product_properties(product_properties, 'product_show')
+        product_properties.each do |pp|
+          xml.param pp.value, {:name => pp.property_name}
+        end
       }
     end
     

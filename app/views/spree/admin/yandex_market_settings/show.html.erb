@@ -13,10 +13,6 @@
     <td colspan=2><%= @config.preferred_url %></td>
   </tr>      
   <tr>
-    <th scope="row"><%= t 'configure_yandex_market.export_category' %>:</th> 
-    <td colspan=2><%= @config.preferred_category %></td>
-  </tr>
-  <tr>
     <th scope="row"><%= t 'configure_yandex_market.currency' %>:</th> 
     <td colspan=2><%= @config.preferred_currency %></td>
   </tr>
@@ -28,24 +24,8 @@
     <th scope="row"><%= t 'configure_yandex_market.export_file' %>:</th> 
     <td>
       <%= link_to(url_for("http://#{@config.preferred_url.sub(%r[^http://],'').sub(%r[/$],'')}/#{'/yandex_market/yandex_market.xml'.sub(%r[^/],'')}"),  url_for("/yandex_market/yandex_market.xml")) if @config.preferred_url %>
-    </td>
-    <td>&nbsp;</td>
+    </td colspan=2>
   </tr>
-  
-  <tr>
-    <th scope="row"><%= t 'configure_yandex_market.ware_property' %>:</th> 
-    <td colspan=2>
-      <ul>
-        <% ["type_prefix", "vendor", "model", "vendor_code",
-           "country_of_manufacturer", "manufacturer_warranty", "wares_type" ].each do |property| -%>
-        <li>
-          <%= t("configure_yandex_market.#{property}") %>: <%=  @config.send("preferred_#{property}".to_sym) %>
-        </li>
-        <% end -%>
-          
-      </ul>
-    </td>
 
-  </tr>
 </table>
 
