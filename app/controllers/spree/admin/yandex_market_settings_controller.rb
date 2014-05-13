@@ -50,7 +50,7 @@ class Spree::Admin::YandexMarketSettingsController < Spree::Admin::BaseControlle
   end
   
   def update   
-    @config.attributes = params[:preferences]
+    @config.attributes = params.require(:preferences).permit!
     @config.save!
     
     respond_to do |format|
