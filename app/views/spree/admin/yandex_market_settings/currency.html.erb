@@ -1,4 +1,4 @@
-<%= render :partial => 'spree/admin/yandex_market_settings/shared/configuration_menu' %>
+<%= render 'spree/admin/shared/yandex_tabs', :current => 'ym_currency' %>
 <%= content_tag :h3, t('configure_yandex_market.list_currency'), :class => "name" %>
 <%= form_tag(admin_yandex_market_settings_path, :method => :put) do -%>
 <label for="preferences_preferred_currency">
