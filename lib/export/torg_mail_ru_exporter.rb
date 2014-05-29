@@ -14,8 +14,7 @@ module Export
     def export
       # @config = ::TorgMailRu.find_or_create_by_name('Default configuration')
       @config = ::YandexMarket.first
-      @host = @config.preferred_url.sub(%r[^http://],'').sub(%r[/$], '')
-      ActionController::Base.asset_host = @config.preferred_url
+      @host = ActionController::Base.asset_host = Spree::Config.site_url
       
       @currencies = @config.preferred_currency.split(';').map{|x| x.split(':')}
       @currencies.first[1] = 1

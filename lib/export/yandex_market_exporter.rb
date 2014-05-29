@@ -12,8 +12,7 @@ module Export
     
     def export
       @config = Spree::YandexMarket::Config.instance
-      @host = @config.preferred_url.sub(%r[^http://],'').sub(%r[/$], '')
-      ActionController::Base.asset_host = @config.preferred_url
+      @host = ActionController::Base.asset_host = Spree::Config.site_url
       
       @currencies = @config.preferred_currency.split(';').map{|x| x.split(':')}
       @currencies.first[1] = 1
@@ -82,7 +81,7 @@ module Export
         xml.currencyId              @currencies.first.first
         xml.categoryId              product.category_id
         if image = product.images.first
-          xml.picture               path_to_url(CGI.escape(image.attachment.url(:product, false)))
+          xml.picture               path_to_url(image.attachment.url(:product, false))
         end
         xml.delivery                true
         xml.vendor                  product.brand_name
