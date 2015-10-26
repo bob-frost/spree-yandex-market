@@ -1,7 +1,11 @@
 Deface::Override.new( :virtual_path => "spree/admin/shared/_menu",
                       :name => "converted_admin_tabs",
                       :insert_bottom => "[data-hook='admin_tabs']",
-                      :text => "<%=  tab(:yandex, :route => 'admin_yandex_market_settings' )  %>"
+                      :text => "<%=
+                        if can? :read, :yandex_market_settings
+                          tab(:yandex, :route => 'admin_yandex_market_settings')
+                        end
+                        %>"
                     )
 
 Deface::Override.new( :virtual_path => "spree/admin/products/_form",
